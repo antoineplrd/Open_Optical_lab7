@@ -1,18 +1,14 @@
 import json
 import math
 from math import *
-from random import random
-
+import random
 import pandas as pd
 import networkx as nx
 from matplotlib import pyplot as plt
 from Lightpath import Lightpath
 from Node import Node
-from Connection import Connection
 from Line import Line
 from Signal_information import Signal_information
-from tabulate import tabulate
-import numpy as np
 from scipy.special import erfcinv
 from statistics import mean
 
@@ -152,7 +148,6 @@ class Network:
             "Signal/noise (dB)": [i[3] for i in test]
         }
         df = pd.DataFrame(data)
-        print(df)
 
         return df
 
@@ -362,31 +357,30 @@ class Network:
             print("All path does not reach the minimum GSNR requirement for the"
                   "specified transceiver strategy ")
 
-    def traffic_matrix(self, M=None):
+    def traffic_matrix(self, numberConnection, M=None):
         # Create the traffic matrix
         self._traffic_matrix = {
-          "A": {"A": [0], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
-          "B": {"A": [200e9], "B": [0], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
-          "C": {"A": [200e9], "B": [200e9], "C": [0], "D": [200e9], "E": [200e9], "F": [200e9]},
-          "D": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [0], "E": [200e9], "F": [200e9]},
-          "E": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [0], "F": [200e9]},
-          "F": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [0]}
-}
+            "A": {"A": [0], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
+            "B": {"A": [200e9], "B": [0], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
+            "C": {"A": [200e9], "B": [200e9], "C": [0], "D": [200e9], "E": [200e9], "F": [200e9]},
+            "D": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [0], "E": [200e9], "F": [200e9]},
+            "E": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [0], "F": [200e9]},
+            "F": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [0]}
+        }
 
         M = M if M else 1  # 1 by default
-        # Manage connections
-        numberConnection = 100
+
         input = []
         output = []
-        node_ret_arr = []
-        eff_n_con = 0  # count the number of passed connection
+        node_result = []
+        passed_con = 0  # count the number of passed connection
         rejected_con = 0  # count the number of rejected connection
         print('Traffic matrix generation: ')
         for i in range(numberConnection):
             input_node = random.choice(list(self._nodes))  # Random input node
             output_node = random.choice(list(self._nodes))  # Random output node
             if self._traffic_matrix[input_node][output_node][0] >= (M * 100e9):
-                eff_n_con += 1
+                passed_con += 1
                 # update traffic matrix
                 self._traffic_matrix[input_node][output_node][0] = self._traffic_matrix[input_node][output_node][0] \
                                                                    - M * 100e9
@@ -396,8 +390,7 @@ class Network:
                 rejected_con += 1
                 print('Rejected connection ', input_node, '->', output_node, '  --  Traffic request not supported')
         print('Total rejected connection: ', rejected_con, ' over ', numberConnection)
-        node_ret_arr.append(input)
-        node_ret_arr.append(output)
-        node_ret_arr.append(eff_n_con)
-        return node_ret_arr
-
+        node_result.append(input)
+        node_result.append(output)
+        node_result.append(passed_con)
+        return node_result

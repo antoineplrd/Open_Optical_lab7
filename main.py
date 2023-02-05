@@ -1,9 +1,7 @@
 # Lab 7 - Open Optical Network ANTOINE POUILLARD
 from matplotlib import pyplot as plt
-import random
 from Network import Network
 from Connection import Connection
-from tabulate import tabulate
 
 
 def main():
@@ -12,21 +10,20 @@ def main():
     signal_power = 0.001
     bit_rates = list()
 
-    for i in range(0, 100):
-        inputNode = random.choice(nodeValue)
-        outputNode = random.choice(nodeValue)
-        while inputNode == outputNode:  # if we have the same node
-            inputNode = random.choice(nodeValue)
-            outputNode = random.choice(nodeValue)
-            if inputNode != outputNode:
-                break
+    return_node = network.traffic_matrix(100)
+    number_connection = return_node[2]  # number of validate nodes
 
-        connections = Connection(inputNode, outputNode, signal_power)
+    if number_connection > 0:
+        for i in range(number_connection):
+            inputNode = return_node[0][i]
+            outputNode = return_node[1][i]
 
-        # network.stream(connections, 'latency')
-        network.stream(connections, 'snr')
-        if connections.bit_rate is not None:
-            bit_rates.append(connections.bit_rate * 10 ** -9)
+            connections = Connection(inputNode, outputNode, signal_power)
+
+            # network.stream(connections, 'latency')
+            network.stream(connections, 'snr')
+            if connections.bit_rate is not None:
+                bit_rates.append(connections.bit_rate * 10 ** -9)
 
     # network.draw()
     network.histogram_accepted_connections(bit_rates)
