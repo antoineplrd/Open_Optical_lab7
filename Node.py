@@ -68,7 +68,7 @@ class Node:
             signal_information.UpdatePath_CrossedNode()
         if len(path) > 1:
             line = self._successive.get(path[0] + path[1]).propagate(signal_information)
-            line.optimal_launch_power = line.optimized_launch_power()
+            #line.optimal_launch_power = line.optimized_launch_power()
 
             return line
         else:

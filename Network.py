@@ -33,7 +33,11 @@ class Network:
                 # implementation for line between 2 nodes: AB, BA
                 connected_nodes.append(j)
             switching_matrix = data[i]["switching_matrix"]
-            transceiver = data[i]["transceiver"]
+            if "transceiver" in data[i]:
+                transceiver = data[i]["transceiver"]
+            else:
+                transceiver = None
+
             node = Node(label, (connected_lines[0], connected_lines[1]), connected_nodes,
                         switching_matrix, transceiver)
             self._nodes.update({label: node})
@@ -259,7 +263,6 @@ class Network:
                 propagate_latency = self.propagate(signal_information)
 
                 connection.latency = propagate_latency.latency
-                print(connection.latency)
             else:
                 connection.latency = 'None'
 
@@ -312,7 +315,6 @@ class Network:
         return route_space_update
 
     def calculate_bit_rate(self, lightpath, strategy):
-        print(lightpath.path)
         path_list = '->'.join(lightpath.path)  # change the list of string in A->B->C
         filtered_snr = self._weighted_paths.query(
             "Paths == @path_list")  # check if the path parameter is in the dataframe
@@ -321,6 +323,7 @@ class Network:
         rs = lightpath.Rs  # symbol rate
         bn = 12.5 * 10 ** 9  # noise bandwidth
         gsnr = snr
+        print(gsnr)
 
         if strategy == "fixed_rate":
             if gsnr >= 2 * erfcinv(2 * ber_t) ** 2 * rs / bn:

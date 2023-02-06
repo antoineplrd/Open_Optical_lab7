@@ -1,33 +1,38 @@
-# Lab 7 - Open Optical Network ANTOINE POUILLARD
+# Lab 4 - Open Optical Network ANTOINE POUILLARD
+import networkx as nx
 from matplotlib import pyplot as plt
+import string
+import random
 from Network import Network
 from Connection import Connection
+from tabulate import tabulate
 
 
 def main():
-    network = Network("nodes_full_flex_rate.json")
+    network = Network("nodes_full_fixed_rate.json")
     nodeValue = 'ABCDEF'
     signal_power = 0.001
     bit_rates = list()
+    for i in range(0, 100):
+        inputNode = random.choice(nodeValue)
+        outputNode = random.choice(nodeValue)
+        while inputNode == outputNode:  # if we have the same node
+            inputNode = random.choice(nodeValue)
+            outputNode = random.choice(nodeValue)
+            if inputNode != outputNode:
+                break
 
-    return_node = network.traffic_matrix(100)
-    number_connection = return_node[2]  # number of validate nodes
+        connections = Connection("A", "B", signal_power)
 
-    if number_connection > 0:
-        for i in range(number_connection):
-            inputNode = return_node[0][i]
-            outputNode = return_node[1][i]
+        # network.stream(connections, 'latency')
+        network.stream(connections, 'snr')
+    # network.draw() # modifier pour mettre le chemin ?
 
-            connections = Connection(inputNode, outputNode, signal_power)
+    if connections.bit_rate is not None:
+        bit_rates.append(connections.bit_rate * 10 ** -9)
 
-            # network.stream(connections, 'latency')
-            network.stream(connections, 'snr')
-            if connections.bit_rate is not None:
-                bit_rates.append(connections.bit_rate * 10 ** -9)
-
-    # network.draw()
+        # network.draw()
     network.histogram_accepted_connections(bit_rates)
-    # print(tabulate(df, showindex=True, headers=df.columns))
 
 
 if "__main__" == __name__:
