@@ -93,6 +93,14 @@ class Line:
         result = self._length / ((2 / 3) * 299792458)
         return result
 
+    @property
+    def optimal_launch_power(self):
+        return self._optimal_launch_power
+
+    @optimal_launch_power.setter
+    def optimal_launch_power(self, power):
+        self._optimal_launch_power = power
+
     def noise_generation(self, signal_power):
         # return pow(10, -9) * signal_power * self._length
         ase = self.ase_generation()
@@ -129,7 +137,9 @@ class Line:
         return pow(p_ch, 3) * eta_nli * n_span * Bn
 
     def optimized_launch_power(self):
+        n_span = self._n_amplifiers - 1
+        Bn = 12.5e9
         ase = self.ase_generation()
         nli = self.nli_generation()
-        optimal_launch_power = (ase / (2 * nli)) ** (1 / 3)
+        optimal_launch_power = (ase / ((2 * nli) * n_span * Bn)) ** (1 / 3)
         return optimal_launch_power

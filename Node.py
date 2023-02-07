@@ -67,8 +67,9 @@ class Node:
                 self._switching_matrix[path[0]][path[2]][signal_information.channel] = 0
             signal_information.UpdatePath_CrossedNode()
         if len(path) > 1:
-            line = self._successive.get(path[0] + path[1]).propagate(signal_information)
-            #line.optimal_launch_power = line.optimized_launch_power()
+            line = self._successive.get(path[0] + path[1])
+            signal_information.signal_power = line.optimized_launch_power()
+            line = line.propagate(signal_information)
 
             return line
         else:

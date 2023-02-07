@@ -1,3 +1,4 @@
+import copy
 import json
 import math
 from math import *
@@ -5,6 +6,7 @@ import random
 import pandas as pd
 import networkx as nx
 from matplotlib import pyplot as plt
+from Connection import Connection
 from Lightpath import Lightpath
 from Node import Node
 from Line import Line
@@ -17,7 +19,6 @@ class Network:
     def __init__(self, file):
         self._nodes = dict()
         self._lines = dict()
-        self._traffic_matrix = {}
 
         open_Json = open(file, "r")
         data = json.loads(open_Json.read())
@@ -241,13 +242,14 @@ class Network:
                 bit_rate = self.calculate_bit_rate(lightpath, self._nodes.get(
                     final_path_snr[0]).transceiver)
 
-                if bit_rate != 0:
+                if bit_rate != 0 or bit_rate is not None:
                     propagate_snr = self.propagate(lightpath)
                     connection.snr = 10 * math.log10(propagate_snr.signal_power / propagate_snr.noise_power)
                     connection.bit_rate = bit_rate
 
                 else:
                     print("Connection rejected, path does not meet GSNR requirements")
+                    connection.snr = 0
 
             else:
                 connection.snr = 0
@@ -261,7 +263,6 @@ class Network:
             if final_path_latency != ['']:
                 signal_information = Lightpath(freq_channel, signal_power, final_path_latency)
                 propagate_latency = self.propagate(signal_information)
-
                 connection.latency = propagate_latency.latency
             else:
                 connection.latency = 'None'
@@ -322,8 +323,7 @@ class Network:
         ber_t = 10 ** -3
         rs = lightpath.Rs  # symbol rate
         bn = 12.5 * 10 ** 9  # noise bandwidth
-        gsnr = snr
-        print(gsnr)
+        gsnr = 10 ** (snr / 10)
 
         if strategy == "fixed_rate":
             if gsnr >= 2 * erfcinv(2 * ber_t) ** 2 * rs / bn:
@@ -357,43 +357,86 @@ class Network:
                       format(round(average_bit_rates, 2)))  # return 2 number of the coma ( round)
             plt.show()
         else:
-            print("All path does not reach the minimum GSNR requirement for the"
+            print("All path does not reach the minimum GSNR requirement for the "
                   "specified transceiver strategy ")
 
-    def traffic_matrix(self, numberConnection, M=None):
+    def traffic_matrix(self, type_method, numberConnection, M):
+
         # Create the traffic matrix
-        self._traffic_matrix = {
-            "A": {"A": [0], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
-            "B": {"A": [200e9], "B": [0], "C": [200e9], "D": [200e9], "E": [200e9], "F": [200e9]},
-            "C": {"A": [200e9], "B": [200e9], "C": [0], "D": [200e9], "E": [200e9], "F": [200e9]},
-            "D": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [0], "E": [200e9], "F": [200e9]},
-            "E": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [0], "F": [200e9]},
-            "F": {"A": [200e9], "B": [200e9], "C": [200e9], "D": [200e9], "E": [200e9], "F": [0]}
-        }
+        traffic_matrix = {}
+        for label in self.nodes:
+            traffic_matrix[label] = {}
+            for inner_label in self.nodes:
+                bit_rate_request = 100e9 * M
+                if label == inner_label:
+                    bit_rate_request = 0
+                traffic_matrix[label][inner_label] = bit_rate_request
 
-        M = M if M else 1  # 1 by default
-
-        input = []
-        output = []
+        signal_power = 0.001
+        connection = []
         node_result = []
         passed_con = 0  # count the number of passed connection
         rejected_con = 0  # count the number of rejected connection
+        refused_requests = []
+
         print('Traffic matrix generation: ')
-        for i in range(numberConnection):
-            input_node = random.choice(list(self._nodes))  # Random input node
-            output_node = random.choice(list(self._nodes))  # Random output node
-            if self._traffic_matrix[input_node][output_node][0] >= (M * 100e9):
-                passed_con += 1
-                # update traffic matrix
-                self._traffic_matrix[input_node][output_node][0] = self._traffic_matrix[input_node][output_node][0] \
-                                                                   - M * 100e9
-                input.append(input_node)
-                output.append(output_node)
-            else:
-                rejected_con += 1
-                print('Rejected connection ', input_node, '->', output_node, '  --  Traffic request not supported')
+        print(traffic_matrix)
+        traffic_matrix_tmp = copy.copy(traffic_matrix)
+
+        while bool(traffic_matrix_tmp):
+            for i in range(numberConnection):
+                for keys in list(traffic_matrix):
+                    for inner_keys in list(traffic_matrix[keys]):
+                        if traffic_matrix[keys][inner_keys] <= 0 or (keys, inner_keys) in refused_requests:
+                            del traffic_matrix_tmp[keys][inner_keys]
+                        if bool(traffic_matrix_tmp[keys]) is False:  # remove case with no more output node
+                            del traffic_matrix_tmp[keys]
+
+                if bool(traffic_matrix_tmp):
+                    input_node = random.choice(list(traffic_matrix_tmp.keys()))  # Random input node
+                    output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))  # Random output node
+
+                    connections = Connection(input_node, output_node, signal_power)
+                    self.stream(connections, type_method)
+
+                    if connections.bit_rate == 0:
+                        print('Rejected connection ', input_node, '->', output_node,
+                              '  --  Traffic request not supported')
+                        refused_requests.append((input_node, output_node))
+                        rejected_con += 1
+                    else:
+                        # update traffic matrix
+                        traffic_matrix[input_node][output_node] -= connections.bit_rate
+                        passed_con += 1
+
+                        if traffic_matrix[input_node][output_node] <= 0:
+                            traffic_matrix[input_node][output_node] = 0
+
+                        connection.append(connections)
+                else:
+                    print('No more traffic after ', i, ' connections')
+                    break
+
+        print(traffic_matrix)
         print('Total rejected connection: ', rejected_con, ' over ', numberConnection)
-        node_result.append(input)
-        node_result.append(output)
+
         node_result.append(passed_con)
+        node_result.append(connection)
+
         return node_result
+
+    def all_result(self, type_method, connection_requests, M=None):
+
+        M = M if M else 1  # 1 by default
+
+        bit_rates = list()
+        return_node = self.traffic_matrix(type_method, connection_requests, M)
+        number_succeed_connection = return_node[0]  # number of validate nodes
+        connections = return_node[1]  # all instances of connections
+
+        if number_succeed_connection > 0:
+            for i in range(number_succeed_connection):
+                if connections[i].bit_rate is not None:
+                    bit_rates.append(connections[i].bit_rate * 10 ** -9)
+
+        self.histogram_accepted_connections(bit_rates)
