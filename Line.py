@@ -101,7 +101,7 @@ class Line:
     def optimal_launch_power(self, power):
         self._optimal_launch_power = power
 
-    def noise_generation(self, signal_power):
+    def noise_generation(self):
         # return pow(10, -9) * signal_power * self._length
         ase = self.ase_generation()
         nli = self.nli_generation()
@@ -110,12 +110,12 @@ class Line:
 
     def propagate(self, lightpath: Lightpath):
         self._state[lightpath.channel] = False  # we change the actual line with channel between 1 and 10 to False
-        lightpath.update_noise_power(self.noise_generation(lightpath.signal_power))
-        lightpath.UpdateLatency(self.latency_generation())
+        lightpath.update_noise_power(self.noise_generation())  # we set the noise power
+        lightpath.UpdateLatency(self.latency_generation())  # we set the latency
         return self._successive.get(lightpath.path[1]).propagate(lightpath)
 
     def probe(self, signal_information):
-        signal_information.update_noise_power(self.noise_generation(signal_information.signal_power))
+        signal_information.update_noise_power(self.noise_generation())
         signal_information.UpdateLatency(self.latency_generation())
         return self._successive.get(signal_information.path[0]).probe(signal_information)
 
@@ -133,13 +133,14 @@ class Line:
         x1 = 0.5 * (np.pi ** 2) * self._beta2 * (Rs ** 2) * (1 / self._alpha) * 10 ** (2 * (Rs / df))
         x2 = (self._gamma ** 2) / (4 * self._alpha * self._beta2 * (Rs ** 3))
         eta_nli = (16 / (27 * np.pi)) * np.log10(x1) * x2
-        p_ch = ((constant.Planck*frequency*Bn*self._noise_figure*self._alpha*self.length)/(2*Bn*eta_nli))**(1/3)
+        p_ch = ((constant.Planck * frequency * Bn * self._noise_figure * self._alpha * self.length) / (
+                    2 * Bn * eta_nli)) ** (1 / 3)
         return pow(p_ch, 3) * eta_nli * n_span * Bn
 
     def optimized_launch_power(self):
-        n_span = self._n_amplifiers - 1
+        n_span = self._n_amplifiers - 1  # number of amplifiers minus 1
         Bn = 12.5e9
-        ase = self.ase_generation()
-        nli = self.nli_generation()
-        optimal_launch_power = (ase / ((2 * nli) * n_span * Bn)) ** (1 / 3)
+        ase = self.ase_generation()  # get the ase
+        nli = self.nli_generation()  # get the nli
+        optimal_launch_power = (ase / ((2 * nli) * n_span * Bn)) ** (1 / 3)  # logo formula
         return optimal_launch_power

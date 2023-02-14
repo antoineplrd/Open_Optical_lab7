@@ -3,7 +3,7 @@ from Signal_information import Signal_information
 
 class Lightpath(Signal_information):
     def __init__(self, channel, signal_power, path):
-        super().__init__(signal_power, path)
+        super().__init__(signal_power, path)  # super because lightpath is a child of signal information
         self._channel = channel
         self._Rs = 32e9
         self._df = 50e9
@@ -31,4 +31,3 @@ class Lightpath(Signal_information):
     @df.setter
     def df(self, df):
         self._df = df
-

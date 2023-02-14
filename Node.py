@@ -61,20 +61,23 @@ class Node:
         if not is_first:
             if len(path) > 2:
                 if signal_information.channel > 1:
-                    self._switching_matrix[path[0]][path[2]][signal_information.channel - 1] = 0
+                    self._switching_matrix[path[0]][path[2]][
+                        signal_information.channel - 1] = 0  # we set the previous index channel to 0
                 if signal_information.channel < 9:
-                    self._switching_matrix[path[0]][path[2]][signal_information.channel + 1] = 0
-                self._switching_matrix[path[0]][path[2]][signal_information.channel] = 0
-            signal_information.UpdatePath_CrossedNode()
+                    self._switching_matrix[path[0]][path[2]][
+                        signal_information.channel + 1] = 0  # we set the next index channel to 0
+                self._switching_matrix[path[0]][path[2]][
+                    signal_information.channel] = 0  # we set the index channel to 0
+            signal_information.UpdatePath_CrossedNode()  # call crossed node to remove current node
         if len(path) > 1:
-            line = self._successive.get(path[0] + path[1])
+            line = self._successive.get(path[0] + path[1])  # get the successive line
             signal_information.signal_power = line.optimized_launch_power()
             line = line.propagate(signal_information)
 
             return line
         else:
-            signal_information.UpdatePath_CrossedNode()
-            return signal_information
+            signal_information.UpdatePath_CrossedNode()  # call crossed node to remove current node
+            return signal_information  # return the signal information
 
     def probe(self, signal_information):
         path = signal_information.path[:]

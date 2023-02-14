@@ -40,8 +40,7 @@ class Signal_information:
 
     def UpdatePath_CrossedNode(self):
         if self._path is not None:
-
-            del self._path[0]
+            del self._path[0]  # we remove the first node of the path when we cross it
 
     def UpdateLatency(self, latency):
         self._latency += latency
