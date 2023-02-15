@@ -5,6 +5,7 @@
             "D",
             "B"
         ],
+        "transceiver": "fixed_rate",
         "position": [
             143556,
             -69323
@@ -96,6 +97,7 @@
             "C",
             "E"
         ],
+        "transceiver": "fixed_rate",
         "position": [
             409383,
             -185964
@@ -188,6 +190,7 @@
             "D",
             "E"
         ],
+        "transceiver": "fixed_rate",
         "position": [
             -343307,
             287286
@@ -337,6 +340,7 @@
             "E",
             "A"
         ],
+        "transceiver": "fixed_rate",
         "position": [
             -194329,
             -129233
@@ -428,6 +432,7 @@
             "C",
             "D"
         ],
+        "transceiver": "fixed_rate",
         "position": [
             38894,
             85634
